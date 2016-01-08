@@ -1,0 +1,18 @@
+{
+  "name": "ls-cron",
+  "version": "1.0.0",
+  "description": "LS Cron Jobs",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Alexjander Bacalso",
+  "license": "ISC",
+  "dependencies": {
+    "config": "^1.17.1",
+    "hapi": "^9.0.3",
+    "node-schedule": "^0.6.0",
+    "path": "^0.12.7",
+    "request": "^2.67.0"
+  }
+}
