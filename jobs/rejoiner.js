@@ -1,18 +1,21 @@
 'use strict';
 
+// Third Party Modules
 var req = require('request');
 var config = require('config');
 var schedule = require('node-schedule');
+
+// Local Modules
+var EmailProducer = require('../producers/email-producer');
+
+// Config variable
+var token = process.env.NODE_TOKEN || config.get('token');
 var rule = new schedule.RecurrenceRule();
 
-var token = process.env.NODE_TOKEN || config.get('token');
-
+// Time variable
 var current = new Date();
-var hourAgo = new Date(current - 1*60*60*1000);
-var minAgo = new Date(current - 30*60*1000);
-var dayAgo = new Date(current - 24*60*60*1000);
-var weekAgo = new Date(current - 7*24*60*60*1000);
-
+var timeAgo = process.env.NODE_TAGO || 1*60*1000;
+var minAgo = new Date(current - timeAgo);
 var options = {
 	method: 'get',
 	url: process.env.NODE_URL || config.get('api.url'),
@@ -28,27 +31,77 @@ options.url = options.url + '/leads';
 
 rule.second = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 schedule.scheduleJob(rule, function(){
+	current = new Date();
+	minAgo = new Date(current - timeAgo);
+
 	options.qs = {
 		filter: {
 			where: {
 				'status': 1,
 				'updatedAt' : {
-					$lt: current,
-					$gt: minAgo
-				}
+					$lte: minAgo // 10 minutes
+				},
+				'ReinvitedId': null
 			}
 		}
 	};
 
 	req(options, function (error, response, body) {
-	  if( error ) {
+		if( error ) {
+			console.warn(JSON.stringify(error));
+		} else {
 
-		console.log(JSON.stringify(error));
-	  } else {
-	  	console.warn(body)
-	  }
+			var emailsSent = 0;
+			var sendEmail = function(lead) {
+				var message = {
+					template: 'rejoiner',
+					emailType: 'rejoiner',
+					from: 'Chim of Loansolutions <hello@loansolutions.ph>',
+					subject: 'Is there something wrong? We can help | Loansolutions.ph',
+					data: lead
+				};
 
+				var emailProducer = new EmailProducer({
+					messageType: 'rejoin.emails.send'
+				});
+
+				var optionReinvited = {
+					method: 'put',
+					url: process.env.NODE_URL || config.get('api.url'),
+					headers: {
+						'Accept': 'application/json',
+						'Authorization' : 'Bearer ' + token
+					},
+					qs : {},
+					json: true
+				};
+
+				optionReinvited.url = optionReinvited.url + '/leads/' + lead.id + '/rejoiner';
+
+				emailProducer.send(message, {
+					onComplete: function( ) {
+						req(optionReinvited, function (error, response, body) {
+							emailsSent++;
+							if( error ) {
+								console.warn(JSON.stringify(error));
+							} else {
+								console.warn('Update lead : ' + lead.id);
+							}
+						});
+					}
+				});
+			};
+
+			if (body.length) {
+				body.forEach(function(lead) {
+					sendEmail(lead);
+				});
+			} else {
+				console.warn('No Drop-Off Yet!');
+			}
+		}
 	});
 
-	console.log(new Date(), 'Every ' + rule.second + ' minutes of the hour.');
+	console.log(new Date(), 'Every ' + rule.second + ' second of the minutes.');
 });
+
