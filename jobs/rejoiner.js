@@ -14,8 +14,7 @@ var rule = new schedule.RecurrenceRule();
 
 // Time variable
 var current = new Date();
-var timeAgo = process.env.NODE_TAGO || 1*60*1000;
-var minAgo = new Date(current - timeAgo);
+var minAgo = new Date(current - 1*60*1000);
 var options = {
 	method: 'get',
 	url: process.env.NODE_URL || config.get('api.url'),
@@ -32,7 +31,7 @@ options.url = options.url + '/leads';
 rule.second = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 schedule.scheduleJob(rule, function(){
 	current = new Date();
-	minAgo = new Date(current - timeAgo);
+	minAgo = new Date(current - 1*60*1000);
 
 	options.qs = {
 		filter: {
@@ -46,9 +45,12 @@ schedule.scheduleJob(rule, function(){
 		}
 	};
 
+	console.log(minAgo);
+	console.log(JSON.stringify(options));
 	req(options, function (error, response, body) {
 		if( error ) {
-			console.warn(JSON.stringify(error));
+			console.log('error')
+			console.log(JSON.stringify(error));
 		} else {
 
 			var emailsSent = 0;
@@ -92,16 +94,17 @@ schedule.scheduleJob(rule, function(){
 				});
 			};
 
+			console.log(body.length)
 			if (body.length) {
 				body.forEach(function(lead) {
 					sendEmail(lead);
 				});
 			} else {
-				console.warn('No Drop-Off Yet!');
+				console.log('No Drop-Off Yet!');
 			}
 		}
 	});
 
-	console.log(new Date(), 'Every ' + rule.second + ' second of the minutes.');
+	console.log(new Date(), ' ' + JSON.stringify(options.qs) + ' Every ' + rule.second + ' second of the minutes.');
 });
 

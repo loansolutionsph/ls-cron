@@ -1,0 +1,10 @@
+{
+  "server": {
+    "port": 8000
+  },
+  "api": {
+    "url" : "http://localhost:8005/leads",
+    "port": 8005
+  },
+  "token": "#####"
+}
