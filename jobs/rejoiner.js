@@ -11,10 +11,11 @@ var EmailProducer = require('../producers/email-producer');
 // Config variable
 var token = process.env.NODE_TOKEN || config.get('token');
 var rule = new schedule.RecurrenceRule();
+var tAgo = process.env.NODE_TAGO || 1*60*1000;
 
 // Time variable
 var current = new Date();
-var minAgo = new Date(current - 1*60*1000);
+var minAgo = new Date(current - tAgo);
 var options = {
 	method: 'get',
 	url: process.env.NODE_URL || config.get('api.url'),
@@ -29,9 +30,10 @@ var options = {
 options.url = options.url + '/leads';
 
 rule.second = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+
 schedule.scheduleJob(rule, function(){
 	current = new Date();
-	minAgo = new Date(current - 1*60*1000);
+	minAgo = new Date(current - tAgo);
 
 	options.qs = {
 		filter: {
@@ -41,19 +43,17 @@ schedule.scheduleJob(rule, function(){
 					$lte: minAgo // 10 minutes
 				},
 				'ReinvitedId': null
-			}
+			},
+			limit: 10
 		}
 	};
 
-	console.log(minAgo);
-	console.log(JSON.stringify(options));
 	req(options, function (error, response, body) {
 		if( error ) {
-			console.log('error')
-			console.log(JSON.stringify(error));
-		} else {
+			return console.log('Error : ' + JSON.stringify(error));
+		}
 
-			var emailsSent = 0;
+		if (body.length) {
 			var sendEmail = function(lead) {
 				var message = {
 					template: 'rejoiner',
@@ -83,28 +83,25 @@ schedule.scheduleJob(rule, function(){
 				emailProducer.send(message, {
 					onComplete: function( ) {
 						req(optionReinvited, function (error, response, body) {
-							emailsSent++;
 							if( error ) {
-								console.warn(JSON.stringify(error));
+								console.log(JSON.stringify(error));
 							} else {
-								console.warn('Update lead : ' + lead.id);
+								console.log('Update lead : ' + lead.id);
 							}
 						});
 					}
 				});
 			};
 
-			console.log(body.length)
-			if (body.length) {
-				body.forEach(function(lead) {
-					sendEmail(lead);
-				});
-			} else {
-				console.log('No Drop-Off Yet!');
-			}
+			body.forEach(function(lead) {
+				sendEmail(lead);
+			});
+		} else {
+			console.log('No more Drop-Off Yet!');
 		}
+
 	});
 
-	console.log(new Date(), ' ' + JSON.stringify(options.qs) + ' Every ' + rule.second + ' second of the minutes.');
+	console.log(new Date(), ' Every ' + rule.second + ' second of the minutes.');
 });
 

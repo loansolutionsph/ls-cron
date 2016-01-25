@@ -3,8 +3,16 @@
     "port": 8000
   },
   "api": {
-    "url" : "http://localhost:8005/leads",
+    "url" : "http://localhost:8005",
     "port": 8005
+  },
+  "rabbitmq": {
+    "connection": {
+      "server": "localhost",
+      "port": 5672,
+      "user": "###",
+      "pass": "###"
+    }
   },
   "token": "#####"
 }
