@@ -86,7 +86,7 @@ schedule.scheduleJob(rule, function(){
 							if( error ) {
 								console.log(JSON.stringify(error));
 							} else {
-								console.log('Update lead : ' + lead.id);
+								console.log('Updated lead : ' + lead.id);
 							}
 						});
 					}
@@ -94,7 +94,31 @@ schedule.scheduleJob(rule, function(){
 			};
 
 			body.forEach(function(lead) {
-				sendEmail(lead);
+				if (process.env.NODE_ENV === 'production') {
+					sendEmail(lead);
+				} else {
+					console.log('Sending message to ' + lead.email);
+					var optionReinvited = {
+						method: 'put',
+						url: process.env.NODE_URL || config.get('api.url'),
+						headers: {
+							'Accept': 'application/json',
+							'Authorization' : 'Bearer ' + token
+						},
+						qs : {},
+						json: true
+					};
+
+					optionReinvited.url = optionReinvited.url + '/leads/' + lead.id + '/rejoiner';
+
+					req(optionReinvited, function (error, response, body) {
+						if( error ) {
+							console.log(JSON.stringify(error));
+						} else {
+							console.log('Updated lead : ' + lead.id);
+						}
+					});
+				}
 			});
 		} else {
 			console.log('No more Drop-Off Yet!');
