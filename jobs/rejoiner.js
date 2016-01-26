@@ -29,7 +29,7 @@ var options = {
 
 options.url = options.url + '/leads';
 
-rule.second = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+rule.minute = new schedule.Range(0, 59, 10);
 
 schedule.scheduleJob(rule, function(){
 	current = new Date();
@@ -126,6 +126,6 @@ schedule.scheduleJob(rule, function(){
 
 	});
 
-	console.log(new Date(), ' Every ' + rule.second + ' second of the minutes.');
+	console.log(new Date(), ' Every 10 minutes of the hour.');
 });
 
