@@ -15,7 +15,7 @@ var tAgo = process.env.NODE_TAGO || 1*60*1000;
 
 // Time variable
 var current = new Date();
-var minAgo = new Date(current - tAgo);
+var timeAgo = new Date(current - tAgo);
 var options = {
 	method: 'get',
 	url: process.env.NODE_URL || config.get('api.url'),
@@ -33,18 +33,18 @@ rule.minute = new schedule.Range(0, 59, 10);
 
 schedule.scheduleJob(rule, function(){
 	current = new Date();
-	minAgo = new Date(current - tAgo);
+	timeAgo = new Date(current - tAgo);
 
 	options.qs = {
 		filter: {
 			where: {
 				'status': 1,
 				'updatedAt' : {
-					$lte: minAgo // 10 minutes
+					$lte: timeAgo
 				},
 				'ReinvitedId': null
 			},
-			limit: 10
+			limit: process.env.NODE_LIMIT || 10
 		}
 	};
 
